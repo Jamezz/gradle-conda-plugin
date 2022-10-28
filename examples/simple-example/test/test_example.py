@@ -1,4 +1,4 @@
-from example import Greeter
+from src import Greeter
 
 
 def test_greeter():

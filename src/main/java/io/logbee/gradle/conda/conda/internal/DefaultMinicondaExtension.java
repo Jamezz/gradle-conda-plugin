@@ -19,7 +19,7 @@ public class DefaultMinicondaExtension implements MinicondaExtension {
     public DefaultMinicondaExtension(Project project) {
         this.project = project;
         this.baseDir = new File(project.getGradle().getGradleUserHomeDir(), "miniconda");
-        this.version = "4.7.10";
+        this.version = "latest";
     }
 
     @Override
@@ -54,12 +54,16 @@ public class DefaultMinicondaExtension implements MinicondaExtension {
 
     @Override
     public File getCondaExecutable() {
-        return new File(getInstallationDir(), "bin/conda");
+        if (OS.isWindows()) {
+            return new File(getInstallationDir(), "condabin/conda");
+        } else {
+            return new File(getInstallationDir(), "bin/conda");
+        }
     }
 
     @Override
     public Miniconda getMiniconda() {
-        return new Miniconda(getName(), getVersion(), getExtension(), getOsName() + "-" + getArch());
+        return new Miniconda(getName(), getVersion(), getSetupExtension(), getOsName() + "-" + getArch());
     }
 
     private String getName() {
@@ -73,8 +77,13 @@ public class DefaultMinicondaExtension implements MinicondaExtension {
         else throw new IllegalArgumentException("Supported operating systems are: Windows, MacOSX, Linux");
     }
 
-    private String getExtension() {
+    private String getSetupExtension() {
         if (OS.isWindows()) return "exe";
+        else return "sh";
+    }
+
+    private String getExtension() {
+        if (OS.isWindows()) return "bat";
         else return "sh";
     }
 

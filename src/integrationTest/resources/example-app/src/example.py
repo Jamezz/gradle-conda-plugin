@@ -1,4 +1,3 @@
-
 class Calc:
 
     def add(self, a, b):

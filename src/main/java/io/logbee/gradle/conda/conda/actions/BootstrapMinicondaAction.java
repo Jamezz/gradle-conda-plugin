@@ -8,6 +8,8 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.process.internal.ExecAction;
 import org.gradle.process.internal.ExecActionFactory;
+import org.slf4j.*;
+import org.gradle.internal.os.OperatingSystem;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -15,6 +17,7 @@ import java.io.File;
 public class BootstrapMinicondaAction implements Action<Project> {
 
     private final ExecActionFactory execActionFactory;
+    private final Logger log = LoggerFactory.getLogger(BootstrapMinicondaAction.class);
 
     @Inject
     public BootstrapMinicondaAction(ExecActionFactory execActionFactory) {
@@ -36,10 +39,17 @@ public class BootstrapMinicondaAction implements Action<Project> {
     private void installMiniconda(MinicondaExtension miniconda, Configuration configuration) {
         final ExecAction action = execActionFactory.newExecAction();
         final File installationDir = miniconda.getInstallationDir();
+        final OperatingSystem os = OperatingSystem.current();
 
-        action.executable("bash");
-        action.args(configuration.getSingleFile());
-        action.args("-b", "-p", installationDir);
+        if (os.isWindows()) {
+            action.executable(configuration.getSingleFile());
+            log.info("Installing miniconda to directory: {}", installationDir);
+            action.args("/S", String.format("/D=%s", installationDir));
+        } else {
+            action.executable("bash");
+            action.args(configuration.getSingleFile());
+            action.args("-b", "-p", installationDir);
+        }
 
         action.execute();
     }
@@ -48,7 +58,7 @@ public class BootstrapMinicondaAction implements Action<Project> {
         final ExecAction action = execActionFactory.newExecAction();
 
         action.executable(miniconda.getCondaExecutable());
-        action.args("install", "--yes", "conda-build");
+        action.args("install", "--yes", "conda");
 
         action.execute();
     }

@@ -57,7 +57,7 @@ class PyTestTaskSpec extends ExampleProjectFixture {
             | 
             |dependencies {
             |  api project(':example-lib')
-            |  test 'conda-forge:pytest:5.1.2'
+            |  test 'conda-forge:pytest'
             |}
             |""".stripMargin()
 

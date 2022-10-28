@@ -10,6 +10,7 @@ import org.gradle.api.tasks.*;
 import org.gradle.process.ExecResult;
 import org.gradle.process.internal.ExecAction;
 import org.gradle.process.internal.ExecActionFactory;
+import org.gradle.internal.os.OperatingSystem;
 
 import javax.inject.Inject;
 import java.io.BufferedWriter;
@@ -24,7 +25,8 @@ public class PyTestTask extends DefaultTask {
 
         return project.getTasks().register("test", PyTestTask.class, task -> {
 
-            final File pyTestExecutable = new File(condaExtension.getEnvironmentDir(), "bin/pytest");
+            final OperatingSystem os = OperatingSystem.current();
+            final File pyTestExecutable = new File(condaExtension.getEnvironmentDir(), "Scripts/pytest" + (os.isWindows() ? ".exe" : ""));
             final SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
             final SourceSet mainSourceSet = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
             final SourceSet testSourceSet = sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME);
@@ -79,18 +81,30 @@ public class PyTestTask extends DefaultTask {
         }
     }
 
-    private void executePyTest() {
+    private ExecAction getExecActionForPytest() {
         final ExecAction execAction = execActionFactory.newExecAction();
-        final ExecResult result;
+        final OperatingSystem os = OperatingSystem.current();
 
-        execAction.executable(getPyTestExecutable());
+        if (os.isWindows()) {
+            execAction.executable("cmd.exe");
+            execAction.args("/C", getPyTestExecutable());
+        } else {
+            execAction.executable(getPyTestExecutable());
+        }
+
+        return execAction;
+    }
+
+    private void executePyTest() {
+        final ExecAction execAction = getExecActionForPytest();
+        final ExecResult result;
 
         if (!getMainSources().isEmpty()) {
             final StringBuilder pythonPath = new StringBuilder();
             for (File file : getMainSources().getFiles()) {
                 pythonPath.append(file.getPath()).append(":");
             }
-            execAction.environment("PYTHONPATH", pythonPath);
+            execAction.environment("PYTHONPATH", pythonPath.toString());
         }
 
         execAction.args("--rootdir", getOutputDir());

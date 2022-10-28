@@ -1,6 +1,6 @@
 package io.logbee.gradle.conda.conda.actions;
 
-import io.logbee.gradle.conda.conda.CondaPluginExtension;
+import io.logbee.gradle.conda.conda.*;
 import io.logbee.gradle.conda.plugin.PythonPlugin;
 import io.logbee.gradle.conda.python.PythonPluginExtension;
 import org.gradle.api.Action;
@@ -14,6 +14,7 @@ import org.gradle.process.internal.ExecAction;
 import org.gradle.process.internal.ExecActionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.gradle.internal.os.OperatingSystem;
 
 import javax.inject.Inject;
 
@@ -36,6 +37,7 @@ public class InstallDependenciesAction implements Action<ResolvableDependencies>
 
     @Override
     public void execute(ResolvableDependencies resolvableDependencies) {
+        updateConda(condaExtension.getMiniconda());
 
         final DependencySet dependencies = resolvableDependencies.getDependencies();
         for (Dependency dependency : dependencies) {
@@ -53,15 +55,37 @@ public class InstallDependenciesAction implements Action<ResolvableDependencies>
         }
     }
 
+    private void updateConda(MinicondaExtension miniconda) {
+        final ExecAction action = execActionFactory.newExecAction();
+        final OperatingSystem os = OperatingSystem.current();
+
+        if (os.isWindows()) {
+            action.executable("cmd.exe");
+            action.args("/C", miniconda.getCondaExecutable());
+        } else {
+            action.executable(miniconda.getCondaExecutable());
+        }
+        action.args("update", "-n", "base", "-c", "defaults", "conda");
+
+        action.execute();
+    }
+
     private void installExternalDependency(ExternalModuleDependency dependency) {
 
         final ExecAction execAction;
         final ExecResult result;
+        final OperatingSystem os = OperatingSystem.current();
 
         execAction = execActionFactory.newExecAction();
-        execAction.executable(condaExtension.getMiniconda().getCondaExecutable());
-        execAction.args("install", "--yes");
+        if (os.isWindows()) {
+            execAction.executable("cmd.exe");
+            execAction.args("/C", condaExtension.getMiniconda().getCondaExecutable(), "install", "--yes");
+        } else {
+            execAction.executable(condaExtension.getMiniconda().getCondaExecutable());
+            execAction.args("install", "--yes");
+        }
         execAction.args("--prefix", condaExtension.getEnvironmentDir());
+        execAction.args("-v", "-v");
         execAction.args(toCondaPackageNotation(dependency));
 
         result = execAction.execute();

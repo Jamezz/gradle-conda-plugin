@@ -35,11 +35,11 @@ class ExampleProjectFixture extends Specification {
         appProjectBuildFile.createNewFile()
         appSrcDir = testProjectDir.newFolder('example-app', 'src')
         appTestDir = testProjectDir.newFolder('example-app', 'test')
-        appSrcFile = new File(appSrcDir, 'example.py')
+        appSrcFile = new File(appTestDir, 'example.py')
         appSrcFile.createNewFile()
-        appSrcFile << getClass().getResource( '/example-app/example.py' ).text
+        appSrcFile << getClass().getResource( '/example-app/src/example.py' ).text
         appTestFile = new File(appTestDir, 'test_example.py')
         appTestFile.createNewFile()
-        appTestFile << getClass().getResource( '/example-app/test_example.py' ).text
+        appTestFile << getClass().getResource( '/example-app/test/test_example.py' ).text
     }
 }
